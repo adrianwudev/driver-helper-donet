@@ -1,4 +1,5 @@
-﻿using driver_helper_dotnet.Model;
+﻿using driver_helper_dotnet.Constants;
+using driver_helper_dotnet.Model;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,25 +13,24 @@ namespace driver_helper_dotnet.Helper
     public class FilterHelper
     {
         private DateHelper dateHelper;
+        private readonly string datePattern = @"^\d{4}/\d{2}/\d{2}（[一二三四五六日]）$";
+        private readonly string HourMinPattern = @"^\d{2}:\d{2}";
+        private readonly string addressPattern = @"上🚘：(.*?)(?=\r\n|$)";
+        private readonly string dropoffAddressPattern = @"下🚘：(.*?)(?=\r\n|$)";
+        private readonly string timePattern = @"時間：(\d{2}:\d{2})";
+        private readonly string cityPattern = @"([\p{IsCJKUnifiedIdeographs}\p{IsCJKCompatibilityIdeographs}\p{IsCJKUnifiedIdeographsExtensionA}]+市)";
+        private readonly string districtPattern = @"[^市縣]+區";
+        private readonly RegexPatterns regexPatterns = new RegexPatterns();
 
         public FilterHelper()
         {
             dateHelper = new DateHelper();
         }
-        public void GetOrdersByFilter(string[] lines)
+        public List<Order> GetOrdersByFilter(string[] lines)
         {
-            string datePattern = @"^\d{4}/\d{2}/\d{2}（[一二三四五六日]）$";
-            string HourMinPattern = @"^\d{2}:\d{2}";
             DateTime todayDateTime = DateTime.MinValue;
             DateTime lineHourMin = DateTime.MinValue;
             DateTime lineDateTIme = DateTime.MinValue;
-
-            string addressPattern = @"上🚘：(.*?)(?=\r\n|$)";
-            string dropoffAddressPattern = @"下🚘：(.*?)(?=\r\n|$)";
-            string timePattern = @"時間：(\d{2}:\d{2})";
-            string cityPattern = @"([\p{IsCJKUnifiedIdeographs}\p{IsCJKCompatibilityIdeographs}\p{IsCJKUnifiedIdeographsExtensionA}]+市)";
-            string districtPattern = @"[^市縣]+區";
-
 
             List<Order> orders = new List<Order>();
             Order order = new Order();
@@ -49,6 +49,7 @@ namespace driver_helper_dotnet.Helper
                     string pickupAddress = addressMatch.Groups[1].Value.Trim();
                     order.Address = pickupAddress;
                     Debug.WriteLine("上車地址： " + pickupAddress);
+
                     // City
                     Match cityMatch = Regex.Match(order.Address, cityPattern);
                     if (cityMatch.Success)
@@ -56,6 +57,7 @@ namespace driver_helper_dotnet.Helper
                         order.City = cityMatch.Groups[1].Value.Trim();
                         Debug.WriteLine("城市： " + order.City);
                     }
+
                     // District
                     Match districtMatch = Regex.Match(order.Address, districtPattern);
                     if (districtMatch.Success)
@@ -64,11 +66,14 @@ namespace driver_helper_dotnet.Helper
                         Debug.WriteLine("區： " + order.District);
                     }
 
-
+                    // OrderTime
                     order.OrderTime = lineDateTIme;
                 }
+
+
                 if (dropoffAddressMatch.Success)
                 {
+                    // Dropoff Address 
                     string dropoffAddress = dropoffAddressMatch.Groups[1].Value.Trim();
                     order.PickUpDrop = dropoffAddress;
                     Debug.WriteLine("下車地址： " + dropoffAddress);
@@ -79,9 +84,20 @@ namespace driver_helper_dotnet.Helper
                     order = new Order();
                 }
 
+                // PickupTime
+                if (timeMatch.Success)
+                {
+                    DateTime pickupTime = dateHelper.GetHourMinFromTxt(timeMatch.Groups[1].Value);
+                    order.PickUpTime = todayDateTime.Date + pickupTime.TimeOfDay;
+                    Debug.WriteLine("上車時間： " + order.PickUpTime);
+                }
+
                 Debug.WriteLine(line);
 
             }
+
+
+            return orders;
         }
 
         private void SetLineDateTime(string HourMinPattern, DateTime todayDateTime, ref DateTime lineHourMin, ref DateTime lineDateTIme, string line)
