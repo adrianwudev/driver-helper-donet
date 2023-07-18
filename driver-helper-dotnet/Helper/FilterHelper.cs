@@ -15,12 +15,9 @@ namespace driver_helper_dotnet.Helper
         private DateHelper dateHelper;
         private readonly string datePattern = @"^\d{4}/\d{2}/\d{2}（[一二三四五六日]）$";
         private readonly string HourMinPattern = @"^\d{2}:\d{2}";
-        private readonly string addressPattern = @"上🚘：(.*?)(?=\r\n|$)";
-        private readonly string dropoffAddressPattern = @"下🚘：(.*?)(?=\r\n|$)";
-        private readonly string timePattern = @"時間：(\d{2}:\d{2})";
-        private readonly string cityPattern = @"([\p{IsCJKUnifiedIdeographs}\p{IsCJKCompatibilityIdeographs}\p{IsCJKUnifiedIdeographsExtensionA}]+市)";
-        private readonly string districtPattern = @"[^市縣]+區";
+
         private readonly RegexPatterns regexPatterns = new RegexPatterns();
+        private readonly MatchHelper matchHelper = new MatchHelper();
 
         public FilterHelper()
         {
@@ -40,9 +37,9 @@ namespace driver_helper_dotnet.Helper
                 todayDateTime = SetDay(datePattern, todayDateTime, line);
                 SetLineDateTime(HourMinPattern, todayDateTime, ref lineHourMin, ref lineDateTIme, line);
 
-                Match addressMatch = Regex.Match(line, addressPattern);
-                Match dropoffAddressMatch = Regex.Match(line, dropoffAddressPattern);
-                Match timeMatch = Regex.Match(line, timePattern);
+                Match addressMatch = matchHelper.RegexMatch(line, regexPatterns.AddressPatterns);
+                Match dropoffAddressMatch = matchHelper.RegexMatch(line, regexPatterns.DropoffPatterns);
+                Match timeMatch = matchHelper.RegexMatch(line, regexPatterns.TimePatterns);
 
                 if (addressMatch.Success)
                 {
@@ -51,7 +48,7 @@ namespace driver_helper_dotnet.Helper
                     Debug.WriteLine("上車地址： " + pickupAddress);
 
                     // City
-                    Match cityMatch = Regex.Match(order.Address, cityPattern);
+                    Match cityMatch = matchHelper.RegexMatch(order.Address, regexPatterns.CityPatterns);
                     if (cityMatch.Success)
                     {
                         order.City = cityMatch.Groups[1].Value.Trim();
@@ -59,7 +56,7 @@ namespace driver_helper_dotnet.Helper
                     }
 
                     // District
-                    Match districtMatch = Regex.Match(order.Address, districtPattern);
+                    Match districtMatch = matchHelper.RegexMatch(order.Address, regexPatterns.DistrictPatterns);
                     if (districtMatch.Success)
                     {
                         order.District = districtMatch.Groups[0].Value.Trim();

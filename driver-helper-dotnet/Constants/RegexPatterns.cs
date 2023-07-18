@@ -8,27 +8,27 @@ namespace driver_helper_dotnet.Constants
 {
     public class RegexPatterns
     {
-        List<string> AddressPatterns = new List<string>()
+        public List<string> AddressPatterns = new List<string>()
         {
             @"上🚘：(.*?)(?=\r\n|$)",
         };
 
-        List<string> DropoffPatterns = new List<string>()
+        public List<string> DropoffPatterns = new List<string>()
         {
             @"下🚘：(.*?)(?=\r\n|$)",
         };
 
-        List<string> TimePatterns = new List<string>()
+        public List<string> TimePatterns = new List<string>()
         {
             @"時間：(\d{2}:\d{2})",
         };
 
-        List<string> CityPatterns = new List<string>()
+        public List<string> CityPatterns = new List<string>()
         {
             @"([\p{IsCJKUnifiedIdeographs}\p{IsCJKCompatibilityIdeographs}\p{IsCJKUnifiedIdeographsExtensionA}]+市)",
         };
 
-        List<string> DistrictPatterns = new List<string>()
+        public List<string> DistrictPatterns = new List<string>()
         {
             @"[^市縣]+區",
         };
