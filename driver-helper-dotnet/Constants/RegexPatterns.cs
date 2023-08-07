@@ -11,11 +11,14 @@ namespace driver_helper_dotnet.Constants
         public List<string> AddressPatterns = new List<string>()
         {
             @"上🚘：(.*?)(?=\r\n|$)",
+            @"上車●(.*?)(?=\r\n|$)",
+            @"上車：(.*?)(?=\r\n|$)",
         };
 
         public List<string> DropoffPatterns = new List<string>()
         {
             @"下🚘：(.*?)(?=\r\n|$)",
+            @"目地：(.*?)(?=\r\n|$)"
         };
 
         public List<string> TimePatterns = new List<string>()

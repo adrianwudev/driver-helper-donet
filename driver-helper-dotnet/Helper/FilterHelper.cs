@@ -14,7 +14,7 @@ namespace driver_helper_dotnet.Helper
     {
         private DateHelper dateHelper;
         private readonly string datePattern = @"^\d{4}/\d{2}/\d{2}（[一二三四五六日]）$";
-        private readonly string HourMinPattern = @"^\d{2}:\d{2}";
+        private readonly string hourMinPattern = @"^\d{2}:\d{2}";
 
         private readonly RegexPatterns regexPatterns = new RegexPatterns();
         private readonly MatchHelper matchHelper = new MatchHelper();
@@ -23,7 +23,7 @@ namespace driver_helper_dotnet.Helper
         {
             dateHelper = new DateHelper();
         }
-        public List<Order> GetOrdersByFilter(string[] lines)
+        public List<Order> GetOrdersByFilter(string[] lines, string groupName)
         {
             DateTime todayDateTime = DateTime.MinValue;
             DateTime lineHourMin = DateTime.MinValue;
@@ -35,7 +35,8 @@ namespace driver_helper_dotnet.Helper
             foreach (string line in lines)
             {
                 todayDateTime = SetDay(datePattern, todayDateTime, line);
-                SetLineDateTime(HourMinPattern, todayDateTime, ref lineHourMin, ref lineDateTIme, line);
+                SetLineDateTime(hourMinPattern, todayDateTime, ref lineHourMin, ref lineDateTIme, line);
+                InitOrder(groupName, lineDateTIme, order);
 
                 Match addressMatch = matchHelper.RegexMatch(line, regexPatterns.AddressPatterns);
                 Match dropoffAddressMatch = matchHelper.RegexMatch(line, regexPatterns.DropoffPatterns);
@@ -62,9 +63,6 @@ namespace driver_helper_dotnet.Helper
                         order.District = districtMatch.Groups[0].Value.Trim();
                         Debug.WriteLine("區： " + order.District);
                     }
-
-                    // OrderTime
-                    order.OrderTime = lineDateTIme;
                 }
 
 
@@ -75,8 +73,7 @@ namespace driver_helper_dotnet.Helper
                     order.PickUpDrop = dropoffAddress;
                     Debug.WriteLine("下車地址： " + dropoffAddress);
 
-                    order.CreateTime = DateTime.Now;
-                    order.ModifyTime = DateTime.Now;
+                    order.IsException = !checkOrderValid(order);
                     orders.Add(order);
                     order = new Order();
                 }
@@ -95,6 +92,19 @@ namespace driver_helper_dotnet.Helper
 
 
             return orders;
+        }
+
+        private static void InitOrder(string groupName, DateTime lineDateTIme, Order order)
+        {
+            order.GroupName = groupName;
+            order.OrderTime = lineDateTIme;
+            order.CreateTime = DateTime.Now;
+            order.ModifyTime = DateTime.Now;
+        }
+
+        private bool checkOrderValid(Order order)
+        {
+            return order.City != null && order.District != null;
         }
 
         private void SetLineDateTime(string HourMinPattern, DateTime todayDateTime, ref DateTime lineHourMin, ref DateTime lineDateTIme, string line)
