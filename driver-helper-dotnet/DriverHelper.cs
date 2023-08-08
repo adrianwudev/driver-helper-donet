@@ -3,6 +3,7 @@ using driver_helper_dotnet.Helper;
 using driver_helper_dotnet.Model;
 using driver_helper_dotnet.Repository;
 using Npgsql;
+using System.ComponentModel;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Text.Encodings.Web;
@@ -12,10 +13,12 @@ namespace driver_helper_dotnet
 {
     public partial class DriverHelper : Form
     {
-        
+        private CancellationTokenSource cancellationTokenSource;
         public DriverHelper()
         {
             InitializeComponent();
+            View.FormView.ProgressUpdated += SetProgressLabel;
+            View.FormView.StatusUpdated += SetStatusLabel;
         }
 
         private void DriverHelper_Load(object sender, EventArgs e)
@@ -23,7 +26,7 @@ namespace driver_helper_dotnet
 
         }
 
-        private void readBtn_Click(object sender, EventArgs e)
+        private async void readBtn_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(groupNametxt.Text))
             {
@@ -34,20 +37,104 @@ namespace driver_helper_dotnet
             openFileDialog1.ShowDialog();
             string fileName = openFileDialog1.FileName;
             string[] lines = File.ReadAllLines(fileName);
+            SetView(lines.Length);
+            cancellationTokenSource = new CancellationTokenSource();
+
+            try
+            {
+                await Task.Run(() =>
+                {
+                    if (!cancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        // filter by format
+                        View.FormView.Status = "掃描中";
+                        FilterHelper filter = new FilterHelper();
+                        List<Order> orderList = filter.GetOrdersByFilter(lines, groupNametxt.Text, cancellationTokenSource.Token);
+
+                        if (cancellationTokenSource.Token.IsCancellationRequested)
+                        {
+                            View.FormView.Status = "任務中止";
+                            return;
+                        }
+                        // save into DB
+                        View.FormView.Status = "儲存中";
+                        cancelBtn.Enabled = false;
+                        HideProgressLbl();
+                        var repo = new Repository.OrderRepo();
+                        repo.SaveToDB(orderList);
+
+                        View.FormView.Status = "儲存完畢";
 
 
-            // filter by format
-            FilterHelper filter = new FilterHelper();
-            List<Order> orderList = filter.GetOrdersByFilter(lines, groupNametxt.Text);
+                        MessageBox.Show("已儲存完畢", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
 
-            // save into DB
-            var repo = new Repository.OrderRepo();
-            repo.SaveToDB(orderList);
+                }, cancellationTokenSource.Token);
+            }
+            catch (Exception ex)
+            {
+            }
 
-
-            MessageBox.Show("已儲存完畢", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            ShowProgressLbl();
+            SetClear();
         }
 
+        private void StopTask()
+        {
+            cancellationTokenSource?.Cancel();
+        }
+        private void cancelBtn_Click(object sender, EventArgs e)
+        {
+            StopTask();
+        }
 
+        private void SetView(int lineCount)
+        {
+            View.FormView.TotalLine = lineCount;
+            readBtn.Enabled = false;
+        }
+
+        private void SetClear()
+        {
+            View.FormView.CurrentLine = 0;
+            readBtn.Enabled = true;
+            cancelBtn.Enabled = true;
+        }
+
+        private void HideProgressLbl()
+        {
+            progresslblM.Visible = false;
+            progresslbl.Visible = false;
+        }
+        private void ShowProgressLbl()
+        {
+            progresslblM.Visible = true;
+            progresslbl.Visible = true;
+        }
+        public void SetProgresslbl(string txt)
+        {
+            progresslbl.Text = txt;
+        }
+        private void SetProgressLabel(string text)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<string>(SetProgressLabel), text);
+                return;
+            }
+
+            progresslbl.Text = text;
+        }
+
+        private void SetStatusLabel(string text)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<string>(SetStatusLabel), text);
+                return;
+            }
+
+            statuslbl.Text = text;
+        }
     }
 }

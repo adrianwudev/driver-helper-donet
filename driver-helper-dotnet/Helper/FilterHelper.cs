@@ -23,7 +23,7 @@ namespace driver_helper_dotnet.Helper
         {
             dateHelper = new DateHelper();
         }
-        public List<Order> GetOrdersByFilter(string[] lines, string groupName)
+        public List<Order> GetOrdersByFilter(string[] lines, string groupName, CancellationToken cancellationToken)
         {
             DateTime todayDateTime = DateTime.MinValue;
             DateTime lineHourMin = DateTime.MinValue;
@@ -34,6 +34,13 @@ namespace driver_helper_dotnet.Helper
 
             foreach (string line in lines)
             {
+                Thread.Sleep(1);
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+                View.FormView.CurrentLine += 1;
+
                 todayDateTime = SetDay(datePattern, todayDateTime, line);
                 SetLineDateTime(hourMinPattern, todayDateTime, ref lineHourMin, ref lineDateTIme, line);
                 InitOrder(groupName, lineDateTIme, order);
