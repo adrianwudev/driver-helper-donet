@@ -9,7 +9,6 @@ namespace driver_helper_dotnet.Model
     public class Order
     {
         public int OrderId { get; set; }
-        
         public string City { get; set; }
         public string District { get; set; }
         public string Address { get; set; }

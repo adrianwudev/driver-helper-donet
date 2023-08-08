@@ -44,7 +44,7 @@ namespace driver_helper_dotnet.Helper
 
                 if (addressMatch.Success)
                 {
-                    string pickupAddress = addressMatch.Groups[1].Value.Trim();
+                    string pickupAddress = addressMatch.Groups[1].Value.Trim().Replace("：", "");
                     order.Address = pickupAddress;
                     Debug.WriteLine("上車地址： " + pickupAddress);
 
