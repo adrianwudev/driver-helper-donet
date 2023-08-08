@@ -14,7 +14,7 @@ namespace driver_helper_dotnet.Model
         public string Address { get; set; }
         public DateTime OrderTime { get; set; }
         public string PickUpDrop { get; set; }
-        public DateTime PickUpTime { get; set; }
+        public DateTime? PickUpTime { get; set; }
         public string Weekday { get; set; }
         public string GroupName { get; set; }
         public double Amount { get; set; }

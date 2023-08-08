@@ -98,8 +98,10 @@ namespace driver_helper_dotnet.Helper
         {
             order.GroupName = groupName;
             order.OrderTime = lineDateTIme;
+            order.Weekday = lineDateTIme.DayOfWeek.ToString().ToUpper();
             order.CreateTime = DateTime.Now;
             order.ModifyTime = DateTime.Now;
+            order.PickUpTime = null;
         }
 
         private bool checkOrderValid(Order order)
