@@ -174,5 +174,6 @@
         private Label statuslbl;
         private Label label2;
         private Button cancelBtn;
+        private Label readLineLbl;
     }
 }

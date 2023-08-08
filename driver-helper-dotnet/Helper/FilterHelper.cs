@@ -25,8 +25,13 @@ namespace driver_helper_dotnet.Helper
         }
         public List<Order> GetOrdersByFilter(string[] lines, string groupName, CancellationToken cancellationToken)
         {
+            bool isAddressMatched = false;
+            bool isTimeMatched = false;
+            Match addressMatch = null;
+            Match timeMatch = null;
+            int currentLine = 0;
+
             DateTime todayDateTime = DateTime.MinValue;
-            DateTime lineHourMin = DateTime.MinValue;
             DateTime lineDateTIme = DateTime.MinValue;
 
             List<Order> orders = new List<Order>();
@@ -34,33 +39,46 @@ namespace driver_helper_dotnet.Helper
 
             foreach (string line in lines)
             {
-                Thread.Sleep(1);
+                //Thread.Sleep(1);
+
                 if (cancellationToken.IsCancellationRequested)
                 {
                     break;
                 }
-                View.FormView.CurrentLine += 1;
+                currentLine += 1;
+                if (currentLine >= 500)
+                {
+                    View.FormView.CurrentLine += currentLine;
+                    currentLine = 0;
+                    Thread.Sleep(1);
+                }
+                
 
+                
                 todayDateTime = SetDay(datePattern, todayDateTime, line);
-                SetLineDateTime(hourMinPattern, todayDateTime, ref lineHourMin, ref lineDateTIme, line);
-                InitOrder(groupName, lineDateTIme, order);
+                SetLineDateTime(hourMinPattern, todayDateTime, ref lineDateTIme, line);
 
-                Match addressMatch = matchHelper.RegexMatch(line, regexPatterns.AddressPatterns);
+
+                if (!isAddressMatched)
+                    addressMatch = matchHelper.RegexMatch(line, regexPatterns.AddressPatterns);
+                if (!isTimeMatched)
+                    timeMatch = matchHelper.RegexMatch(line, regexPatterns.TimePatterns);
                 Match dropoffAddressMatch = matchHelper.RegexMatch(line, regexPatterns.DropoffPatterns);
-                Match timeMatch = matchHelper.RegexMatch(line, regexPatterns.TimePatterns);
+
 
                 if (addressMatch.Success)
                 {
+                    isAddressMatched = true;
+                    InitOrder(groupName, lineDateTIme, order);
+
                     string pickupAddress = addressMatch.Groups[1].Value.Trim().Replace("：", "");
                     order.Address = pickupAddress;
-                    Debug.WriteLine("上車地址： " + pickupAddress);
 
                     // City
                     Match cityMatch = matchHelper.RegexMatch(order.Address, regexPatterns.CityPatterns);
                     if (cityMatch.Success)
                     {
                         order.City = cityMatch.Groups[1].Value.Trim();
-                        Debug.WriteLine("城市： " + order.City);
                     }
 
                     // District
@@ -68,33 +86,34 @@ namespace driver_helper_dotnet.Helper
                     if (districtMatch.Success)
                     {
                         order.District = districtMatch.Groups[0].Value.Trim();
-                        Debug.WriteLine("區： " + order.District);
                     }
                 }
 
+
+                // PickupTime
+                if (timeMatch.Success)
+                {
+                    isTimeMatched = true;
+                    DateTime pickupTime = dateHelper.GetHourMinFromTxt(timeMatch.Groups[1].Value);
+                    order.PickUpTime = todayDateTime.Date + pickupTime.TimeOfDay;
+                }
 
                 if (dropoffAddressMatch.Success)
                 {
                     // Dropoff Address 
                     string dropoffAddress = dropoffAddressMatch.Groups[1].Value.Trim();
                     order.PickUpDrop = dropoffAddress;
-                    Debug.WriteLine("下車地址： " + dropoffAddress);
 
                     order.IsException = !checkOrderValid(order);
                     orders.Add(order);
-                    order = new Order();
-                }
 
-                // PickupTime
-                if (timeMatch.Success)
-                {
-                    DateTime pickupTime = dateHelper.GetHourMinFromTxt(timeMatch.Groups[1].Value);
-                    order.PickUpTime = todayDateTime.Date + pickupTime.TimeOfDay;
-                    Debug.WriteLine("上車時間： " + order.PickUpTime);
+                    // Reset
+                    order = new Order();
+                    isAddressMatched = false;
+                    isTimeMatched = false;
                 }
 
                 Debug.WriteLine(line);
-
             }
 
 
@@ -116,11 +135,11 @@ namespace driver_helper_dotnet.Helper
             return order.City != null && order.District != null;
         }
 
-        private void SetLineDateTime(string HourMinPattern, DateTime todayDateTime, ref DateTime lineHourMin, ref DateTime lineDateTIme, string line)
+        private void SetLineDateTime(string HourMinPattern, DateTime todayDateTime, ref DateTime lineDateTIme, string line)
         {
             if (Regex.IsMatch(line, HourMinPattern))
             {
-                lineHourMin = dateHelper.GetHourMinFromTxt(line);
+                var lineHourMin = dateHelper.GetHourMinFromTxt(line);
                 lineDateTIme = todayDateTime.Date + lineHourMin.TimeOfDay;
             }
         }
@@ -130,7 +149,6 @@ namespace driver_helper_dotnet.Helper
             if (Regex.IsMatch(line, datePattern))
             {
                 todayDateTime = dateHelper.GetDateFromTxt(line);
-                Debug.WriteLine(todayDateTime);
             }
 
             return todayDateTime;
