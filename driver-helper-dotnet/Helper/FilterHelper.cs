@@ -105,6 +105,8 @@ namespace driver_helper_dotnet.Helper
                     order.PickUpDrop = dropoffAddress;
 
                     order.IsException = !checkOrderValid(order);
+
+                    SetOrderBeforeAdd(groupName, lineDateTIme, order);
                     orders.Add(order);
 
                     // Reset
@@ -122,12 +124,16 @@ namespace driver_helper_dotnet.Helper
 
         private static void InitOrder(string groupName, DateTime lineDateTIme, Order order)
         {
+            order.PickUpTime = null;
+        }
+
+        private static void SetOrderBeforeAdd(string groupName, DateTime lineDateTIme, Order order)
+        {
             order.GroupName = groupName;
             order.OrderTime = lineDateTIme;
             order.Weekday = lineDateTIme.DayOfWeek.ToString().ToUpper();
             order.CreateTime = DateTime.Now;
             order.ModifyTime = DateTime.Now;
-            order.PickUpTime = null;
         }
 
         private bool checkOrderValid(Order order)
