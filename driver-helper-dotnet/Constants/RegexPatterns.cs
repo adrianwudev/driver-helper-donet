@@ -2,46 +2,43 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace driver_helper_dotnet.Constants
 {
     public class RegexPatterns
     {
-        public List<string> AddressPatterns = new List<string>()
-        {
-            @"上🚘：(.*?)(?=\r\n|$)",
-            @"上車●(.*?)(?=\r\n|$)",
-            @"上車：(.*?)(?=\r\n|$)",
-            @"上車 : (.*?)(?=\r\n|$)",
-            @"上車 ：(.*?)(?=\r\n|$)",
-            @"上車地點是：(.*?)(?=\r\n|$)",
-            @"上車● (.*?)(?=\r\n|$)",
-            @"上車-(.*?)(?=\r\n|$)",
-            @"上車地址；(.*?)(?=\r\n|$)",
-            @"上車。(.*?)(?=\r\n|$)",
-            @"上車  ：(.*?)(?=\r\n|$)"
-        };
+        public List<string> AddressPatterns { get; private set; }
+        public List<string> DropoffPatterns { get; private set; }
+        public List<string> TimePatterns { get; private set; }
+        public List<string> CityPatterns { get; private set; }
+        public List<string> DistrictPatterns { get; private set; }
 
-        public List<string> DropoffPatterns = new List<string>()
+        public RegexPatterns()
         {
-            @"下🚘：(.*?)(?=\r\n|$)",
-            @"目地：(.*?)(?=\r\n|$)"
-        };
+            LoadPatternsFromJson();
+        }
 
-        public List<string> TimePatterns = new List<string>()
+        private void LoadPatternsFromJson()
         {
-            @"時間：(\d{2}:\d{2})",
-        };
+            string jsonFilePath = "patternsSettings.json";
 
-        public List<string> CityPatterns = new List<string>()
-        {
-            @"([\p{IsCJKUnifiedIdeographs}\p{IsCJKCompatibilityIdeographs}\p{IsCJKUnifiedIdeographsExtensionA}]+市)",
-        };
+            if (File.Exists(jsonFilePath))
+            {
+                string jsonContent = File.ReadAllText(jsonFilePath);
+                var patterns = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(jsonContent);
 
-        public List<string> DistrictPatterns = new List<string>()
-        {
-            @"[^市縣]+區",
-        };
+                AddressPatterns = patterns["AddressPatterns"];
+                DropoffPatterns = patterns["DropoffPatterns"];
+                TimePatterns = patterns["TimePatterns"];
+                CityPatterns = patterns["CityPatterns"];
+                DistrictPatterns = patterns["DistrictPatterns"];
+            }
+            else
+            {
+                throw new Exception("the JSON file doesn't exist");
+            }
+        }
     }
 }
