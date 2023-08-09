@@ -47,5 +47,41 @@ namespace driver_helper_dotnet.View
             string status = Status;
             StatusUpdated?.Invoke(status);
         }
+
+        public static event Action<bool> CancelBtnEnabledUpdated;
+        private static bool _cancelBtnEnabled = true;
+        public static bool CancelBtnEnabled
+        {
+            get => _cancelBtnEnabled;
+            set
+            {
+                _cancelBtnEnabled = value;
+                UpdateCancelBtnEnabled();
+            }
+        }
+
+        private static void UpdateCancelBtnEnabled()
+        {
+            bool enabled = CancelBtnEnabled;
+            CancelBtnEnabledUpdated?.Invoke(enabled);
+        }
+
+        public static event Action<bool> ProgressLblVisibleUpdated;
+        private static bool _progressLblVisible = true;
+        public static bool ProgressLblVisible
+        {
+            get => _progressLblVisible;
+            set
+            {
+                _progressLblVisible = value;
+                UpdateProgressLblVisible();
+            }
+        }
+
+        private static void UpdateProgressLblVisible()
+        {
+            bool visible = ProgressLblVisible;
+            ProgressLblVisibleUpdated?.Invoke(visible);
+        }
     }
 }

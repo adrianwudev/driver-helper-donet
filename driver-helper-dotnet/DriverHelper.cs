@@ -19,6 +19,8 @@ namespace driver_helper_dotnet
             InitializeComponent();
             View.FormView.ProgressUpdated += SetProgressLabel;
             View.FormView.StatusUpdated += SetStatusLabel;
+            View.FormView.CancelBtnEnabledUpdated += SetCancelBtn;
+            View.FormView.ProgressLblVisibleUpdated += SetProgressLblVisible;
         }
 
         private void DriverHelper_Load(object sender, EventArgs e)
@@ -58,7 +60,6 @@ namespace driver_helper_dotnet
                         }
                         // save into DB
                         View.FormView.Status = "儲存中";
-                        cancelBtn.Enabled = false;
                         HideProgressLbl();
                         var repo = new Repository.OrderRepo();
                         repo.SaveToDB(orderList);
@@ -103,13 +104,11 @@ namespace driver_helper_dotnet
 
         private void HideProgressLbl()
         {
-            progresslblM.Visible = false;
-            progresslbl.Visible = false;
+            View.FormView.CancelBtnEnabled = false;
         }
         private void ShowProgressLbl()
         {
-            progresslblM.Visible = true;
-            progresslbl.Visible = true;
+            View.FormView.CancelBtnEnabled = true;
         }
         public void SetProgresslbl(string txt)
         {
@@ -135,6 +134,28 @@ namespace driver_helper_dotnet
             }
 
             statuslbl.Text = text;
+        }
+        private void SetCancelBtn(bool enabled)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<bool>(SetCancelBtn), enabled);
+                return;
+            }
+
+            cancelBtn.Enabled = enabled;
+        }
+
+        private void SetProgressLblVisible(bool visible)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<bool>(SetProgressLblVisible), visible);
+                return;
+            }
+
+            progresslblM.Enabled = visible;
+            progresslbl.Enabled = visible;
         }
     }
 }
