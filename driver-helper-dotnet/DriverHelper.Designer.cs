@@ -39,6 +39,7 @@
             this.groupNametxt = new System.Windows.Forms.TextBox();
             this.groupName = new System.Windows.Forms.Label();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
+            this.checkConBtn = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.SuspendLayout();
@@ -54,6 +55,7 @@
             // 
             // tabPage1
             // 
+            this.tabPage1.Controls.Add(this.checkConBtn);
             this.tabPage1.Controls.Add(this.cancelBtn);
             this.tabPage1.Controls.Add(this.statuslbl);
             this.tabPage1.Controls.Add(this.label2);
@@ -145,6 +147,16 @@
             // 
             this.openFileDialog1.FileName = "openFileDialog1";
             // 
+            // checkConBtn
+            // 
+            this.checkConBtn.Location = new System.Drawing.Point(579, 345);
+            this.checkConBtn.Name = "checkConBtn";
+            this.checkConBtn.Size = new System.Drawing.Size(100, 41);
+            this.checkConBtn.TabIndex = 8;
+            this.checkConBtn.Text = "Check Connection";
+            this.checkConBtn.UseVisualStyleBackColor = true;
+            this.checkConBtn.Click += new System.EventHandler(this.checkConBtn_Click);
+            // 
             // DriverHelper
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -175,5 +187,6 @@
         private Label label2;
         private Button cancelBtn;
         private Label readLineLbl;
+        private Button checkConBtn;
     }
 }

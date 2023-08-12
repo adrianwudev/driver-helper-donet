@@ -157,5 +157,23 @@ namespace driver_helper_dotnet
             progresslblM.Enabled = visible;
             progresslbl.Enabled = visible;
         }
+
+        private void checkConBtn_Click(object sender, EventArgs e)
+        {
+            string connStr = new SettingsHelper().GetConnectionString();
+
+            try
+            {
+                using (var conn = new NpgsqlConnection(connStr))
+                {
+                    conn.Open();
+                    MessageBox.Show("資料庫連線正常", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (NpgsqlException)
+            {
+                MessageBox.Show("資料庫連線異常", "警告", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
     }
 }
