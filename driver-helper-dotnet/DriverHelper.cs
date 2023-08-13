@@ -37,14 +37,17 @@ namespace driver_helper_dotnet
                 return;
             }
 
-            openFileDialog1.ShowDialog();
-            string fileName = openFileDialog1.FileName;
-            string[] lines = File.ReadAllLines(fileName);
-            SetView(lines.Length);
-            cancellationTokenSource = new CancellationTokenSource();
+            
 
             try
             {
+                openFileDialog1.ShowDialog();
+                string fileName = openFileDialog1.FileName;
+                string[] lines = File.ReadAllLines(fileName);
+                SetView(lines.Length);
+                cancellationTokenSource = new CancellationTokenSource();
+
+                // Start Loading
                 await Task.Run(() =>
                 {
                     if (!cancellationTokenSource.Token.IsCancellationRequested)
@@ -75,6 +78,8 @@ namespace driver_helper_dotnet
             }
             catch (Exception ex)
             {
+                // log
+                Debug.WriteLine(ex);
             }
 
             ShowProgressLbl();
