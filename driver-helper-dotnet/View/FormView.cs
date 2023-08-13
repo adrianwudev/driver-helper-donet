@@ -83,5 +83,23 @@ namespace driver_helper_dotnet.View
             bool visible = ProgressLblVisible;
             ProgressLblVisibleUpdated?.Invoke(visible);
         }
+
+        public static event Action<bool> CheckBtnEnabledUpdated;
+        private static bool _checkBtnEnabled = true;
+        public static bool CheckBtnEnabled
+        {
+            get => _checkBtnEnabled;
+            set
+            {
+                _checkBtnEnabled = value;
+                UpdateCheckBtnEnabled();
+            }
+        }
+
+        private static void UpdateCheckBtnEnabled()
+        {
+            bool enabled = CheckBtnEnabled;
+            CheckBtnEnabledUpdated?.Invoke(enabled);
+        }
     }
 }

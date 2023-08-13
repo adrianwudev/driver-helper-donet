@@ -21,6 +21,7 @@ namespace driver_helper_dotnet
             View.FormView.StatusUpdated += SetStatusLabel;
             View.FormView.CancelBtnEnabledUpdated += SetCancelBtn;
             View.FormView.ProgressLblVisibleUpdated += SetProgressLblVisible;
+            View.FormView.CheckBtnEnabledUpdated += SetCheckBtn;
         }
 
         private void DriverHelper_Load(object sender, EventArgs e)
@@ -156,6 +157,17 @@ namespace driver_helper_dotnet
 
             progresslblM.Enabled = visible;
             progresslbl.Enabled = visible;
+        }
+
+        private void SetCheckBtn(bool enabled)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action<bool>(SetCheckBtn), enabled);
+                return;
+            }
+
+            checkConBtn.Enabled = enabled;
         }
 
         private void checkConBtn_Click(object sender, EventArgs e)
