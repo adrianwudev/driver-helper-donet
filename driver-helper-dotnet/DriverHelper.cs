@@ -36,7 +36,6 @@ namespace driver_helper_dotnet
                 MessageBox.Show("請輸入群組名稱！", "警示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-
             
 
             try
