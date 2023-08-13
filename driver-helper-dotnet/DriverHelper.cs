@@ -94,6 +94,7 @@ namespace driver_helper_dotnet
         {
             View.FormView.TotalLine = lineCount;
             readBtn.Enabled = false;
+            View.FormView.CheckBtnEnabled = false;
         }
 
         private void SetClear()
@@ -101,6 +102,7 @@ namespace driver_helper_dotnet
             View.FormView.CurrentLine = 0;
             readBtn.Enabled = true;
             cancelBtn.Enabled = true;
+            View.FormView.CheckBtnEnabled = true;
         }
 
         private void HideProgressLbl()
