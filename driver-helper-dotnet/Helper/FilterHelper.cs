@@ -32,7 +32,7 @@ namespace driver_helper_dotnet.Helper
             int currentLine = 0;
 
             DateTime todayDateTime = DateTime.MinValue;
-            DateTime lineDateTIme = DateTime.MinValue;
+            DateTime lineDateTime = DateTime.MinValue;
 
             List<Order> orders = new List<Order>();
             Order order = new Order();
@@ -56,7 +56,7 @@ namespace driver_helper_dotnet.Helper
 
                 
                 todayDateTime = SetDay(datePattern, todayDateTime, line);
-                SetLineDateTime(hourMinPattern, todayDateTime, ref lineDateTIme, line);
+                SetLineDateTime(hourMinPattern, todayDateTime, ref lineDateTime, line);
 
 
                 if (!isAddressMatched)
@@ -69,7 +69,7 @@ namespace driver_helper_dotnet.Helper
                 if (addressMatch.Success)
                 {
                     isAddressMatched = true;
-                    InitOrder(groupName, lineDateTIme, order);
+                    InitOrder(groupName, lineDateTime, order);
 
                     string pickupAddress = addressMatch.Groups[1].Value.Trim().Replace("：", "");
                     order.Address = pickupAddress;
@@ -100,13 +100,19 @@ namespace driver_helper_dotnet.Helper
 
                 if (dropoffAddressMatch.Success)
                 {
+                    // Is pickUpAddress empty
+                    if (string.IsNullOrWhiteSpace(order.Address))
+                    {
+                        order.Address = "此單找不到上車地點";
+                        SetOrderTime(lineDateTime, order);
+                    }
                     // Dropoff Address 
                     string dropoffAddress = dropoffAddressMatch.Groups[1].Value.Trim();
                     order.PickUpDrop = dropoffAddress;
 
                     order.IsException = !checkOrderValid(order);
 
-                    SetOrderBeforeAdd(groupName, lineDateTIme, order);
+                    SetOrderBeforeAdd(groupName, lineDateTime, order);
                     orders.Add(order);
 
                     // Reset
@@ -122,14 +128,19 @@ namespace driver_helper_dotnet.Helper
             return orders;
         }
 
-        private static void InitOrder(string groupName, DateTime lineDateTIme, Order order)
+        private static void InitOrder(string groupName, DateTime lineDateTime, Order order)
         {
             order.PickUpTime = null;
-            order.OrderTime = lineDateTIme;
-            order.Weekday = lineDateTIme.DayOfWeek.ToString().ToUpper();
+            SetOrderTime(lineDateTime, order);
         }
 
-        private static void SetOrderBeforeAdd(string groupName, DateTime lineDateTIme, Order order)
+        private static void SetOrderTime(DateTime lineDateTime, Order order)
+        {
+            order.OrderTime = lineDateTime;
+            order.Weekday = lineDateTime.DayOfWeek.ToString().ToUpper();
+        }
+
+        private static void SetOrderBeforeAdd(string groupName, DateTime lineDateTime, Order order)
         {
             order.GroupName = groupName;
             order.CreateTime = DateTime.Now;
@@ -141,12 +152,12 @@ namespace driver_helper_dotnet.Helper
             return order.City != null && order.District != null;
         }
 
-        private void SetLineDateTime(string HourMinPattern, DateTime todayDateTime, ref DateTime lineDateTIme, string line)
+        private void SetLineDateTime(string HourMinPattern, DateTime todayDateTime, ref DateTime lineDateTime, string line)
         {
             if (Regex.IsMatch(line, HourMinPattern))
             {
                 var lineHourMin = dateHelper.GetHourMinFromTxt(line);
-                lineDateTIme = todayDateTime.Date + lineHourMin.TimeOfDay;
+                lineDateTime = todayDateTime.Date + lineHourMin.TimeOfDay;
             }
         }
 
