@@ -12,28 +12,30 @@ namespace driver_helper_dotnet.Helper
 {
     public class FilterHelper
     {
-        private readonly DateHelper dateHelper;
-        private readonly RegexPatterns regexPatterns;
-        private readonly MatchHelper matchHelper;
-        private readonly SettingsHelper settingsHelper;
+        private readonly DateHelper _dateHelper;
+        private readonly RegexPatterns _regexPatterns;
+        private readonly MatchHelper _matchHelper;
+        private readonly SettingsHelper _settingsHelper;
+        private readonly int _scanLimit;
+
+        private bool _isAddressMatched { get; set; } = false;
+        private bool _isTimeMatched { get; set; } = false;
+        private Match _addressMatch { get; set; } = null;
+        private Match _timeMatch { get; set; } = null;
+        private Match _dropoffAddressMatch { get; set; } = null;
+        private int _currentLine { get; set; } = 0;
+        private int _scanCount { get; set; } = 0;
 
         public FilterHelper()
         {
-            dateHelper = new DateHelper();
-            regexPatterns = new RegexPatterns();
-            matchHelper = new MatchHelper();
-            settingsHelper = new SettingsHelper();
+            this._dateHelper = new DateHelper();
+            this._regexPatterns = new RegexPatterns();
+            this._matchHelper = new MatchHelper();
+            this._settingsHelper = new SettingsHelper();
+            this._scanLimit = _settingsHelper.GetOrderSize();
         }
         public List<Order> GetOrdersByFilter(string[] lines, string groupName, CancellationToken cancellationToken)
         {
-            bool isAddressMatched = false;
-            bool isTimeMatched = false;
-            Match addressMatch = null;
-            Match timeMatch = null;
-            int currentLine = 0;
-            int scanLimit = settingsHelper.GetOrderSize();
-            int scanCount = 0;
-
             DateTime todayDateTime = DateTime.MinValue;
             DateTime lineDateTime = DateTime.MinValue;
 
@@ -48,95 +50,125 @@ namespace driver_helper_dotnet.Helper
                 {
                     break;
                 }
-                currentLine += 1;
-                if (currentLine >= 500)
+
+                // Interact with UI
+                _currentLine += 1;
+                if (_currentLine >= 500)
                 {
-                    View.FormView.CurrentLine += currentLine;
-                    currentLine = 0;
+                    View.FormView.CurrentLine += _currentLine;
+                    _currentLine = 0;
                     Thread.Sleep(1);
                 }
-                
 
-                
-                todayDateTime = SetDay(todayDateTime, line);
+
                 SetLineDateTime(todayDateTime, ref lineDateTime, line);
 
-                if (!isAddressMatched)
-                    addressMatch = matchHelper.RegexMatch(line, regexPatterns.AddressPatterns);
-                if (!isTimeMatched)
-                    timeMatch = matchHelper.RegexMatch(line, regexPatterns.TimePatterns);
-                Match dropoffAddressMatch = matchHelper.RegexMatch(line, regexPatterns.DropoffPatterns);
+                if (!_isAddressMatched)
+                    _addressMatch = _matchHelper.RegexMatch(line, _regexPatterns.AddressPatterns);
+                if (!_isTimeMatched)
+                    _timeMatch = _matchHelper.RegexMatch(line, _regexPatterns.TimePatterns);
+                _dropoffAddressMatch = _matchHelper.RegexMatch(line, _regexPatterns.DropoffPatterns);
 
-
-                if (addressMatch.Success)
+                // Pickup
+                if (_addressMatch.Success)
                 {
-                    isAddressMatched = true;
-                    // reset scan count
-                    scanCount = 0;
-                    InitOrder(groupName, lineDateTime, order);
-
-                    string pickupAddress = addressMatch.Groups[1].Value.Trim().Replace("：", "");
-                    order.Address = pickupAddress;
-
-                    // City
-                    Match cityMatch = matchHelper.RegexMatch(order.Address, regexPatterns.CityPatterns);
-                    if (cityMatch.Success)
-                    {
-                        order.City = cityMatch.Groups[1].Value.Trim();
-                    }
-
-                    // District
-                    Match districtMatch = matchHelper.RegexMatch(order.Address, regexPatterns.DistrictPatterns);
-                    if (districtMatch.Success)
-                    {
-                        order.District = districtMatch.Groups[0].Value.Trim();
-                    }
+                    ProcessAddress(groupName, lineDateTime, order);
 
                     continue;
                 }
 
 
                 // PickupTime
-                if (timeMatch.Success)
+                if (_timeMatch.Success)
                 {
-                    isTimeMatched = true;
-                    DateTime pickupTime = dateHelper.GetHourMinFromTxt(timeMatch.Groups[1].Value);
+                    _isTimeMatched = true;
+                    DateTime pickupTime = _dateHelper.GetHourMinFromTxt(_timeMatch.Groups[1].Value);
                     order.PickUpTime = todayDateTime.Date + pickupTime.TimeOfDay;
 
                     continue;
                 }
 
-                if (dropoffAddressMatch.Success)
+                // Dropoff
+                if (_dropoffAddressMatch.Success)
                 {
-                    // Is pickUpAddress empty
-                    if (string.IsNullOrWhiteSpace(order.Address))
-                    {
-                        order.Address = "此單找不到上車地點";
-                        SetOrderTime(lineDateTime, order);
-                    }
-                    // Dropoff Address 
-                    string dropoffAddress = dropoffAddressMatch.Groups[1].Value.Trim();
-                    order.PickUpDrop = dropoffAddress;
-
-                    order.IsException = !checkOrderValid(order);
-
-                    SetOrderBeforeAdd(groupName, lineDateTime, order);
-                    orders.Add(order);
-
-                    // Reset
-                    order = new Order();
-                    isAddressMatched = false;
-                    isTimeMatched = false;
+                    order = ProcessDropoff(groupName, lineDateTime, orders, order);
 
                     continue;
                 }
 
+                _scanCount++;
+                // Could not find the dropoff in range of scan limit
+                if (isOverScanLimit(_scanCount))
+                {
+                    order.PickUpDrop = "找不到下車地點";
+                    order.IsException = !checkOrderValid(order);
+                    SetOrderBeforeAdd(groupName, lineDateTime, order);
+                    orders.Add(order);
+                    ResetOrder(out order);
+                }
 
                 Debug.WriteLine(line);
             }
 
 
             return orders;
+        }
+
+        private void ProcessAddress(string groupName, DateTime lineDateTime, Order order)
+        {
+            _isAddressMatched = true;
+            // reset scan count
+            _scanCount = 0;
+            InitOrder(groupName, lineDateTime, order);
+
+            order.Address = _addressMatch.Groups[1].Value.Trim().Replace("：", "");
+
+            // City
+            Match cityMatch = _matchHelper.RegexMatch(order.Address, _regexPatterns.CityPatterns);
+            if (cityMatch.Success)
+            {
+                order.City = cityMatch.Groups[1].Value.Trim();
+            }
+
+            // District
+            Match districtMatch = _matchHelper.RegexMatch(order.Address, _regexPatterns.DistrictPatterns);
+            if (districtMatch.Success)
+            {
+                order.District = districtMatch.Groups[0].Value.Trim();
+            }
+        }
+
+        private Order ProcessDropoff(string groupName, DateTime lineDateTime, List<Order> orders, Order order)
+        {
+            // Is pickUpAddress empty
+            if (string.IsNullOrWhiteSpace(order.Address))
+            {
+                order.Address = "此單找不到上車地點";
+                SetOrderTime(lineDateTime, order);
+            }
+            // Dropoff Address 
+            order.PickUpDrop = _dropoffAddressMatch.Groups[1].Value.Trim();
+            order.IsException = !checkOrderValid(order);
+
+            SetOrderBeforeAdd(groupName, lineDateTime, order);
+            orders.Add(order);
+
+            // Reset
+            ResetOrder(out order);
+
+            return order;
+        }
+
+        private void ResetOrder(out Order order)
+        {
+            order = new Order();
+            _isAddressMatched = false;
+            _isTimeMatched = false;
+        }
+
+        private bool isOverScanLimit(int scanCount)
+        {
+            return (scanCount > _scanLimit);
         }
 
         private static void InitOrder(string groupName, DateTime lineDateTime, Order order)
@@ -165,21 +197,23 @@ namespace driver_helper_dotnet.Helper
 
         private void SetLineDateTime(DateTime todayDateTime, ref DateTime lineDateTime, string line)
         {
-            string hourMinPattern = regexPatterns.DateTimePatterns.HourMinPattern;
+            string hourMinPattern = _regexPatterns.DateTimePatterns.HourMinPattern;
+            DateTime date = SetDay(todayDateTime, line);
+
             if (Regex.IsMatch(line, hourMinPattern))
             {
-                var lineHourMin = dateHelper.GetHourMinFromTxt(line);
-                lineDateTime = todayDateTime.Date + lineHourMin.TimeOfDay;
+                var lineHourMin = _dateHelper.GetHourMinFromTxt(line);
+                lineDateTime = date.Date + lineHourMin.TimeOfDay;
             }
         }
 
         private DateTime SetDay(DateTime todayDateTime, string line)
         {
-            string datePattern = regexPatterns.DateTimePatterns.DatePattern;
+            string datePattern = _regexPatterns.DateTimePatterns.DatePattern;
 
             if (Regex.IsMatch(line, datePattern))
             {
-                todayDateTime = dateHelper.GetDateFromTxt(line);
+                todayDateTime = _dateHelper.GetDateFromTxt(line);
             }
 
             return todayDateTime;
