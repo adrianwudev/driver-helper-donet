@@ -12,16 +12,17 @@ namespace driver_helper_dotnet.Helper
 {
     public class FilterHelper
     {
-        private DateHelper dateHelper;
-        private readonly string datePattern = @"^\d{4}/\d{2}/\d{2}（[一二三四五六日]）$";
-        private readonly string hourMinPattern = @"^\d{2}:\d{2}";
-
-        private readonly RegexPatterns regexPatterns = new RegexPatterns();
-        private readonly MatchHelper matchHelper = new MatchHelper();
+        private readonly DateHelper dateHelper;
+        private readonly RegexPatterns regexPatterns;
+        private readonly MatchHelper matchHelper;
+        private readonly SettingsHelper settingsHelper;
 
         public FilterHelper()
         {
             dateHelper = new DateHelper();
+            regexPatterns = new RegexPatterns();
+            matchHelper = new MatchHelper();
+            settingsHelper = new SettingsHelper();
         }
         public List<Order> GetOrdersByFilter(string[] lines, string groupName, CancellationToken cancellationToken)
         {
@@ -30,6 +31,8 @@ namespace driver_helper_dotnet.Helper
             Match addressMatch = null;
             Match timeMatch = null;
             int currentLine = 0;
+            int scanLimit = settingsHelper.GetOrderSize();
+            int scanCount = 0;
 
             DateTime todayDateTime = DateTime.MinValue;
             DateTime lineDateTime = DateTime.MinValue;
@@ -55,9 +58,8 @@ namespace driver_helper_dotnet.Helper
                 
 
                 
-                todayDateTime = SetDay(datePattern, todayDateTime, line);
-                SetLineDateTime(hourMinPattern, todayDateTime, ref lineDateTime, line);
-
+                todayDateTime = SetDay(todayDateTime, line);
+                SetLineDateTime(todayDateTime, ref lineDateTime, line);
 
                 if (!isAddressMatched)
                     addressMatch = matchHelper.RegexMatch(line, regexPatterns.AddressPatterns);
@@ -69,6 +71,8 @@ namespace driver_helper_dotnet.Helper
                 if (addressMatch.Success)
                 {
                     isAddressMatched = true;
+                    // reset scan count
+                    scanCount = 0;
                     InitOrder(groupName, lineDateTime, order);
 
                     string pickupAddress = addressMatch.Groups[1].Value.Trim().Replace("：", "");
@@ -87,6 +91,8 @@ namespace driver_helper_dotnet.Helper
                     {
                         order.District = districtMatch.Groups[0].Value.Trim();
                     }
+
+                    continue;
                 }
 
 
@@ -96,6 +102,8 @@ namespace driver_helper_dotnet.Helper
                     isTimeMatched = true;
                     DateTime pickupTime = dateHelper.GetHourMinFromTxt(timeMatch.Groups[1].Value);
                     order.PickUpTime = todayDateTime.Date + pickupTime.TimeOfDay;
+
+                    continue;
                 }
 
                 if (dropoffAddressMatch.Success)
@@ -119,7 +127,10 @@ namespace driver_helper_dotnet.Helper
                     order = new Order();
                     isAddressMatched = false;
                     isTimeMatched = false;
+
+                    continue;
                 }
+
 
                 Debug.WriteLine(line);
             }
@@ -152,17 +163,20 @@ namespace driver_helper_dotnet.Helper
             return order.City != null && order.District != null;
         }
 
-        private void SetLineDateTime(string HourMinPattern, DateTime todayDateTime, ref DateTime lineDateTime, string line)
+        private void SetLineDateTime(DateTime todayDateTime, ref DateTime lineDateTime, string line)
         {
-            if (Regex.IsMatch(line, HourMinPattern))
+            string hourMinPattern = regexPatterns.DateTimePatterns.HourMinPattern;
+            if (Regex.IsMatch(line, hourMinPattern))
             {
                 var lineHourMin = dateHelper.GetHourMinFromTxt(line);
                 lineDateTime = todayDateTime.Date + lineHourMin.TimeOfDay;
             }
         }
 
-        private DateTime SetDay(string datePattern, DateTime todayDateTime, string line)
+        private DateTime SetDay(DateTime todayDateTime, string line)
         {
+            string datePattern = regexPatterns.DateTimePatterns.DatePattern;
+
             if (Regex.IsMatch(line, datePattern))
             {
                 todayDateTime = dateHelper.GetDateFromTxt(line);

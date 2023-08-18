@@ -14,10 +14,12 @@ namespace driver_helper_dotnet.Constants
         public List<string> TimePatterns { get; private set; }
         public List<string> CityPatterns { get; private set; }
         public List<string> DistrictPatterns { get; private set; }
+        public DateTimePatterns DateTimePatterns { get; private set; }
 
         public RegexPatterns()
         {
             LoadPatternsFromJson();
+            DateTimePatterns = new DateTimePatterns();
         }
 
         private void LoadPatternsFromJson()
