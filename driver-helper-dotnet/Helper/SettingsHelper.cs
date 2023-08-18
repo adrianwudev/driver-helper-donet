@@ -9,7 +9,8 @@ namespace driver_helper_dotnet.Helper
 {
     internal class SettingsHelper
     {
-        private string connStr { get; set; }
+        private string connStr;
+        private int orderSize;
         public SettingsHelper()
         {
             string jsonFilePath = "appSettings.json";
@@ -21,11 +22,22 @@ namespace driver_helper_dotnet.Helper
                 if (connStrDict.TryGetValue("PostgreSQLConnection", out string connStr))
                     this.connStr = connStr;
             }
+            
+            if (jsonObject.TryGetValue("OrderSettings", out Dictionary<string, string> orderSizeMap))
+            {
+                orderSizeMap.TryGetValue("OrderSize", out string orderSize);
+                this.orderSize = int.Parse(orderSize);
+            }
         }
 
         public string GetConnectionString()
         {
             return this.connStr;
+        }
+
+        public int GetOrderSize()
+        {
+            return this.orderSize;
         }
         
     }
