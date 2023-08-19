@@ -61,7 +61,7 @@ namespace driver_helper_dotnet.Helper
                 }
 
 
-                SetLineDateTime(todayDateTime, ref lineDateTime, line);
+                SetLineDateTime(ref todayDateTime, ref lineDateTime, line);
 
                 if (!_isAddressMatched)
                     _addressMatch = _matchHelper.RegexMatch(line, _regexPatterns.AddressPatterns);
@@ -70,16 +70,16 @@ namespace driver_helper_dotnet.Helper
                 _dropoffAddressMatch = _matchHelper.RegexMatch(line, _regexPatterns.DropoffPatterns);
 
                 // Pickup
-                if (_addressMatch.Success)
+                if (_addressMatch.Success && !_isAddressMatched)
                 {
-                    ProcessAddress(groupName, lineDateTime, order);
+                    ProcessAddress(lineDateTime, order);
 
                     continue;
                 }
 
 
                 // PickupTime
-                if (_timeMatch.Success)
+                if (_timeMatch.Success && !_isTimeMatched)
                 {
                     _isTimeMatched = true;
                     DateTime pickupTime = _dateHelper.GetHourMinFromTxt(_timeMatch.Groups[1].Value);
@@ -96,10 +96,15 @@ namespace driver_helper_dotnet.Helper
                     continue;
                 }
 
-                _scanCount++;
+                if(!string.IsNullOrEmpty(order.Address))
+                    _scanCount++;
                 // Could not find the dropoff in range of scan limit
                 if (isOverScanLimit(_scanCount))
                 {
+                    if (string.IsNullOrEmpty(order.Address))
+                    {
+                        SetOrderTime(lineDateTime, order); // if address doesn not exist, then the orderTime need to be set
+                    }
                     order.PickUpDrop = "找不到下車地點";
                     order.IsException = !checkOrderValid(order);
                     SetOrderBeforeAdd(groupName, lineDateTime, order);
@@ -114,12 +119,12 @@ namespace driver_helper_dotnet.Helper
             return orders;
         }
 
-        private void ProcessAddress(string groupName, DateTime lineDateTime, Order order)
+        private void ProcessAddress(DateTime lineDateTime, Order order)
         {
             _isAddressMatched = true;
             // reset scan count
             _scanCount = 0;
-            InitOrder(groupName, lineDateTime, order);
+            InitOrder(lineDateTime, order);
 
             order.Address = _addressMatch.Groups[1].Value.Trim().Replace("：", "");
 
@@ -171,7 +176,7 @@ namespace driver_helper_dotnet.Helper
             return (scanCount > _scanLimit);
         }
 
-        private static void InitOrder(string groupName, DateTime lineDateTime, Order order)
+        private static void InitOrder(DateTime lineDateTime, Order order)
         {
             order.PickUpTime = null;
             SetOrderTime(lineDateTime, order);
@@ -195,19 +200,19 @@ namespace driver_helper_dotnet.Helper
             return order.City != null && order.District != null;
         }
 
-        private void SetLineDateTime(DateTime todayDateTime, ref DateTime lineDateTime, string line)
+        private void SetLineDateTime(ref DateTime todayDateTime, ref DateTime lineDateTime, string line)
         {
             string hourMinPattern = _regexPatterns.DateTimePatterns.HourMinPattern;
-            DateTime date = SetDay(todayDateTime, line);
+            SetDate(ref todayDateTime, line);
 
             if (Regex.IsMatch(line, hourMinPattern))
             {
                 var lineHourMin = _dateHelper.GetHourMinFromTxt(line);
-                lineDateTime = date.Date + lineHourMin.TimeOfDay;
+                lineDateTime = todayDateTime.Date + lineHourMin.TimeOfDay;
             }
         }
 
-        private DateTime SetDay(DateTime todayDateTime, string line)
+        private void SetDate(ref DateTime todayDateTime, string line)
         {
             string datePattern = _regexPatterns.DateTimePatterns.DatePattern;
 
@@ -215,8 +220,6 @@ namespace driver_helper_dotnet.Helper
             {
                 todayDateTime = _dateHelper.GetDateFromTxt(line);
             }
-
-            return todayDateTime;
         }
     }
 }
