@@ -169,6 +169,9 @@ namespace driver_helper_dotnet.Helper
             order = new Order();
             _isAddressMatched = false;
             _isTimeMatched = false;
+
+            //reset scan count
+            _scanCount = 0;
         }
 
         private bool isOverScanLimit(int scanCount)
