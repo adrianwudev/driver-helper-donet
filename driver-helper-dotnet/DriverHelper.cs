@@ -14,6 +14,7 @@ namespace driver_helper_dotnet
     public partial class DriverHelper : Form
     {
         private CancellationTokenSource cancellationTokenSource;
+        private OrderHelper _orderHelper;
         public DriverHelper()
         {
             InitializeComponent();
@@ -22,6 +23,8 @@ namespace driver_helper_dotnet
             View.FormView.CancelBtnEnabledUpdated += SetCancelBtn;
             View.FormView.ProgressLblVisibleUpdated += SetProgressLblVisible;
             View.FormView.CheckBtnEnabledUpdated += SetCheckBtn;
+
+            this._orderHelper = new OrderHelper();
         }
 
         private void DriverHelper_Load(object sender, EventArgs e)
@@ -56,6 +59,8 @@ namespace driver_helper_dotnet
                         FilterHelper filter = new FilterHelper();
                         List<Order> orderList = filter.GetOrdersByFilter(lines, groupNametxt.Text, cancellationTokenSource.Token);
 
+                        DeleteTheSameOrderInRange1Hour(orderList);
+
                         if (cancellationTokenSource.Token.IsCancellationRequested)
                         {
                             View.FormView.Status = "任務中止";
@@ -83,6 +88,13 @@ namespace driver_helper_dotnet
 
             ShowProgressLbl();
             SetClear();
+        }
+
+        private void DeleteTheSameOrderInRange1Hour(List<Order> orderList)
+        {
+            var groupedOrders = _orderHelper.OrdersGroupByAddress(orderList);
+            orderList.Clear();
+            orderList.AddRange(groupedOrders);
         }
 
         private void StopTask()
