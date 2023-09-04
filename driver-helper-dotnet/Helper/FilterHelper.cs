@@ -103,7 +103,9 @@ namespace driver_helper_dotnet.Helper
                 {
                     if (string.IsNullOrEmpty(order.Address))
                     {
-                        SetOrderTime(lineDateTime, order); // if address doesn not exist, then the orderTime need to be set
+                        // if address doesn not exist, then skip
+                        _scanCount = 0;
+                        continue;
                     }
                     order.PickUpDrop = "找不到下車地點";
                     order.IsException = !checkOrderValid(order);
