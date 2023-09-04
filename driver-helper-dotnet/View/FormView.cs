@@ -101,5 +101,22 @@ namespace driver_helper_dotnet.View
             bool enabled = CheckBtnEnabled;
             CheckBtnEnabledUpdated?.Invoke(enabled);
         }
+
+        public static event Action<bool> DeleteBtnEnabledUpdated;
+        private static bool _deleteBtnEnabled = true;
+        public static bool DeleteBtnEnabled
+        {
+            get => _deleteBtnEnabled;
+            set
+            {
+                _deleteBtnEnabled = value;
+                UpdateDeleteBtnEnabled();
+            }
+        }
+        private static void UpdateDeleteBtnEnabled()
+        {
+            bool enabled = DeleteBtnEnabled;
+            DeleteBtnEnabledUpdated?.Invoke(enabled);
+        }
     }
 }

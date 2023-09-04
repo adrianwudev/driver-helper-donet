@@ -11,6 +11,7 @@ namespace driver_helper_dotnet.Helper
     {
         private string connStr;
         private int orderSize;
+        private int expiredMonth;
         public SettingsHelper()
         {
             string jsonFilePath = "appSettings.json";
@@ -23,10 +24,13 @@ namespace driver_helper_dotnet.Helper
                     this.connStr = connStr;
             }
             
-            if (jsonObject.TryGetValue("OrderSettings", out Dictionary<string, string> orderSizeMap))
+            if (jsonObject.TryGetValue("OrderSettings", out Dictionary<string, string> orderSettingsMap))
             {
-                orderSizeMap.TryGetValue("OrderSize", out string orderSize);
+                orderSettingsMap.TryGetValue("OrderSize", out string orderSize);
                 this.orderSize = int.Parse(orderSize);
+
+                orderSettingsMap.TryGetValue("ExpiredMonth", out string expiredMonth);
+                this.expiredMonth = int.Parse(expiredMonth);
             }
         }
 
@@ -38,6 +42,10 @@ namespace driver_helper_dotnet.Helper
         public int GetOrderSize()
         {
             return this.orderSize;
+        }
+        public int GetExpiredMonth()
+        {
+            return this.expiredMonth;
         }
         
     }

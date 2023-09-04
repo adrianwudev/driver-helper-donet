@@ -30,6 +30,7 @@
         {
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.checkConBtn = new System.Windows.Forms.Button();
             this.cancelBtn = new System.Windows.Forms.Button();
             this.statuslbl = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
@@ -39,7 +40,7 @@
             this.groupNametxt = new System.Windows.Forms.TextBox();
             this.groupName = new System.Windows.Forms.Label();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
-            this.checkConBtn = new System.Windows.Forms.Button();
+            this.deleteExpiredBtn = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.SuspendLayout();
@@ -55,6 +56,7 @@
             // 
             // tabPage1
             // 
+            this.tabPage1.Controls.Add(this.deleteExpiredBtn);
             this.tabPage1.Controls.Add(this.checkConBtn);
             this.tabPage1.Controls.Add(this.cancelBtn);
             this.tabPage1.Controls.Add(this.statuslbl);
@@ -71,6 +73,16 @@
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "分頁";
             this.tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // checkConBtn
+            // 
+            this.checkConBtn.Location = new System.Drawing.Point(579, 345);
+            this.checkConBtn.Name = "checkConBtn";
+            this.checkConBtn.Size = new System.Drawing.Size(100, 41);
+            this.checkConBtn.TabIndex = 8;
+            this.checkConBtn.Text = "Check Connection";
+            this.checkConBtn.UseVisualStyleBackColor = true;
+            this.checkConBtn.Click += new System.EventHandler(this.checkConBtn_Click);
             // 
             // cancelBtn
             // 
@@ -147,15 +159,15 @@
             // 
             this.openFileDialog1.FileName = "openFileDialog1";
             // 
-            // checkConBtn
+            // deleteExpiredBtn
             // 
-            this.checkConBtn.Location = new System.Drawing.Point(579, 345);
-            this.checkConBtn.Name = "checkConBtn";
-            this.checkConBtn.Size = new System.Drawing.Size(100, 41);
-            this.checkConBtn.TabIndex = 8;
-            this.checkConBtn.Text = "Check Connection";
-            this.checkConBtn.UseVisualStyleBackColor = true;
-            this.checkConBtn.Click += new System.EventHandler(this.checkConBtn_Click);
+            this.deleteExpiredBtn.Location = new System.Drawing.Point(450, 345);
+            this.deleteExpiredBtn.Name = "deleteExpiredBtn";
+            this.deleteExpiredBtn.Size = new System.Drawing.Size(100, 41);
+            this.deleteExpiredBtn.TabIndex = 9;
+            this.deleteExpiredBtn.Text = "刪除兩月之前資料";
+            this.deleteExpiredBtn.UseVisualStyleBackColor = true;
+            this.deleteExpiredBtn.Click += new System.EventHandler(this.deleteExpiredBtn_Click);
             // 
             // DriverHelper
             // 
@@ -188,5 +200,6 @@
         private Button cancelBtn;
         private Label readLineLbl;
         private Button checkConBtn;
+        private Button deleteExpiredBtn;
     }
 }

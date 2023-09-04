@@ -12,10 +12,13 @@ namespace driver_helper_dotnet.Repository
 {
     internal class OrderRepo
     {
+        private string _connStr;
+        public OrderRepo()
+        {
+            this._connStr = new SettingsHelper().GetConnectionString();
+        }
         public void SaveToDB(List<Order> orders)
         {
-            string connStr = new SettingsHelper().GetConnectionString();
-
             var sql = $@" INSERT INTO orders(
                     city, district, address, order_time, pick_up_drop, pick_up_time
                     , weekday, group_name, amount, distance, is_exception
@@ -26,7 +29,7 @@ namespace driver_helper_dotnet.Repository
                     , @RepeatCount, @CreateTime, @ModifyTime)";
             try
             {
-                using (var conn = new NpgsqlConnection(connStr))
+                using (var conn = new NpgsqlConnection(_connStr))
                 {
                     conn.Open();
 
@@ -39,6 +42,25 @@ namespace driver_helper_dotnet.Repository
                 throw;
             }
 
+        }
+
+        public void DeleteExpired(int expiredRangeMonth)
+        {
+            DateTime deleteTime = DateTime.Now.AddMonths(-expiredRangeMonth);
+
+            var sql = $@" DELETE FROM orders WHERE order_time < @order_time ";
+            try
+            {
+                using(var conn = new NpgsqlConnection(_connStr))
+                {
+                    conn.Open();
+                    conn.Execute(sql, param: new { order_time = deleteTime});
+                }
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
         }
         
  
