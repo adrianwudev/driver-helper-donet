@@ -91,8 +91,14 @@ namespace driver_helper_dotnet.Helper
                 // Dropoff
                 if (_dropoffAddressMatch.Success)
                 {
-                    order = ProcessDropoff(groupName, lineDateTime, orders, order);
+                    // Is pickUpAddress empty
+                    if (string.IsNullOrWhiteSpace(order.Address))
+                    {
+                        ResetOrder(out order);
+                        continue;
+                    }
 
+                    order = ProcessDropoff(groupName, lineDateTime, orders, order);
                     continue;
                 }
 
@@ -147,12 +153,6 @@ namespace driver_helper_dotnet.Helper
 
         private Order ProcessDropoff(string groupName, DateTime lineDateTime, List<Order> orders, Order order)
         {
-            // Is pickUpAddress empty
-            if (string.IsNullOrWhiteSpace(order.Address))
-            {
-                order.Address = "此單找不到上車地點";
-                SetOrderTime(lineDateTime, order);
-            }
             // Dropoff Address 
             order.PickUpDrop = _dropoffAddressMatch.Groups[1].Value.Trim();
             order.IsException = !checkOrderValid(order);
